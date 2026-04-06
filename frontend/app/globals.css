@@ -1,0 +1,263 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+.theme-azure-night {
+  --page-bg: #020b26;
+  --surface-0: #071739;
+  --surface-1: #0b1f4c;
+  --surface-2: #122b63;
+  --border-subtle: #203a6b;
+  --text-primary: #f3f8ff;
+  --text-secondary: #c3d3ef;
+  --text-muted: #8ea4cb;
+  --text-soft: #6f86af;
+  --accent-strong: #2f72f4;
+  --accent: #4f8cff;
+  --accent-soft: #8cb5ff;
+  --success-bg: #10374c;
+  --success-fg: #95f5e4;
+  --success-border: #2f7f95;
+  --danger-bg: #3d1725;
+  --danger-fg: #ffb2c4;
+  --danger-border: #8b3450;
+  --warning-bg: #3a2d12;
+  --warning-fg: #f8d48c;
+  --warning-border: #8e6a24;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply antialiased;
+  min-height: 100vh;
+  background:
+    radial-gradient(90% 70% at 100% 0%, rgba(122, 163, 255, 0.35) 0%, rgba(122, 163, 255, 0) 52%),
+    radial-gradient(75% 60% at 0% 100%, rgba(156, 188, 255, 0.26) 0%, rgba(156, 188, 255, 0) 55%),
+    linear-gradient(160deg, #020815 0%, var(--page-bg) 40%, #010515 100%);
+  color: var(--text-primary);
+}
+
+a {
+  @apply transition-colors;
+}
+
+input,
+button {
+  @apply outline-none;
+}
+
+::selection {
+  background-color: rgba(99, 143, 255, 0.35);
+  color: #f7fbff;
+}
+
+@layer utilities {
+  .theme-azure-night .bg-white {
+    background-color: var(--surface-0);
+  }
+
+  .theme-azure-night .bg-white\/95 {
+    background-color: rgba(7, 23, 57, 0.95);
+  }
+
+  .theme-azure-night .bg-white\/20 {
+    background-color: rgba(205, 224, 255, 0.2);
+  }
+
+  .theme-azure-night .bg-white\/15 {
+    background-color: rgba(205, 224, 255, 0.15);
+  }
+
+  .theme-azure-night .bg-gray-100,
+  .theme-azure-night .bg-slate-50 {
+    background-color: var(--surface-0);
+  }
+
+  .theme-azure-night .bg-slate-100,
+  .theme-azure-night .bg-slate-200 {
+    background-color: var(--surface-1);
+  }
+
+  .theme-azure-night .bg-slate-700 {
+    background-color: var(--surface-1);
+  }
+
+  .theme-azure-night .bg-slate-900,
+  .theme-azure-night .bg-slate-950 {
+    background-color: #041233;
+  }
+
+  .theme-azure-night .bg-blue-50,
+  .theme-azure-night .bg-blue-100 {
+    background-color: rgba(79, 140, 255, 0.16);
+  }
+
+  .theme-azure-night .bg-cyan-100,
+  .theme-azure-night .bg-blue-500\/20 {
+    background-color: rgba(130, 186, 255, 0.2);
+  }
+
+  .theme-azure-night .bg-blue-600,
+  .theme-azure-night .hover\:bg-blue-700:hover {
+    background-color: var(--accent-strong);
+  }
+
+  .theme-azure-night .disabled\:bg-blue-300:disabled,
+  .theme-azure-night .disabled\:bg-blue-400:disabled {
+    background-color: rgba(79, 140, 255, 0.45);
+  }
+
+  .theme-azure-night .bg-emerald-50,
+  .theme-azure-night .bg-emerald-100 {
+    background-color: var(--success-bg);
+  }
+
+  .theme-azure-night .bg-emerald-600,
+  .theme-azure-night .hover\:bg-emerald-700:hover {
+    background-color: #21977d;
+  }
+
+  .theme-azure-night .disabled\:bg-emerald-300:disabled {
+    background-color: rgba(33, 151, 125, 0.5);
+  }
+
+  .theme-azure-night .bg-red-50,
+  .theme-azure-night .bg-red-100,
+  .theme-azure-night .hover\:bg-red-50:hover {
+    background-color: var(--danger-bg);
+  }
+
+  .theme-azure-night .bg-amber-50 {
+    background-color: var(--warning-bg);
+  }
+
+  .theme-azure-night .text-slate-950,
+  .theme-azure-night .text-slate-900 {
+    color: var(--text-primary);
+  }
+
+  .theme-azure-night .text-slate-700,
+  .theme-azure-night .text-slate-600 {
+    color: var(--text-secondary);
+  }
+
+  .theme-azure-night .text-slate-500,
+  .theme-azure-night .text-slate-400,
+  .theme-azure-night .text-slate-300,
+  .theme-azure-night .placeholder\:text-slate-400::placeholder {
+    color: var(--text-muted);
+  }
+
+  .theme-azure-night .text-blue-900,
+  .theme-azure-night .text-blue-200,
+  .theme-azure-night .text-blue-100 {
+    color: #d7e8ff;
+  }
+
+  .theme-azure-night .text-blue-700,
+  .theme-azure-night .text-blue-600,
+  .theme-azure-night .hover\:text-blue-700:hover {
+    color: var(--accent-soft);
+  }
+
+  .theme-azure-night .text-emerald-700,
+  .theme-azure-night .text-emerald-600 {
+    color: var(--success-fg);
+  }
+
+  .theme-azure-night .text-red-700,
+  .theme-azure-night .text-red-600,
+  .theme-azure-night .hover\:text-red-700:hover {
+    color: var(--danger-fg);
+  }
+
+  .theme-azure-night .text-amber-700 {
+    color: var(--warning-fg);
+  }
+
+  .theme-azure-night .border-slate-200,
+  .theme-azure-night .border-slate-300,
+  .theme-azure-night .border-r,
+  .theme-azure-night .border-b,
+  .theme-azure-night .border-t {
+    border-color: var(--border-subtle);
+  }
+
+  .theme-azure-night .border-blue-100,
+  .theme-azure-night .border-blue-200,
+  .theme-azure-night .border-blue-500,
+  .theme-azure-night .focus\:border-blue-500:focus,
+  .theme-azure-night .border-t-blue-600 {
+    border-color: var(--accent);
+  }
+
+  .theme-azure-night .focus\:ring-blue-100:focus {
+    --tw-ring-color: rgba(116, 168, 255, 0.35);
+  }
+
+  .theme-azure-night .border-emerald-200,
+  .theme-azure-night .border-emerald-400 {
+    border-color: var(--success-border);
+  }
+
+  .theme-azure-night .border-red-200,
+  .theme-azure-night .border-red-300,
+  .theme-azure-night .border-red-400,
+  .theme-azure-night .border-t-red-600 {
+    border-color: var(--danger-border);
+  }
+
+  .theme-azure-night .border-amber-200 {
+    border-color: var(--warning-border);
+  }
+
+  .theme-azure-night .border-white\/40 {
+    border-color: rgba(219, 232, 255, 0.4);
+  }
+
+  .theme-azure-night .from-blue-50,
+  .theme-azure-night .from-slate-200 {
+    --tw-gradient-from: #06163c var(--tw-gradient-from-position);
+    --tw-gradient-to: rgba(6, 22, 60, 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+  }
+
+  .theme-azure-night .via-white {
+    --tw-gradient-to: rgba(8, 29, 72, 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), #081d48 var(--tw-gradient-via-position), var(--tw-gradient-to);
+  }
+
+  .theme-azure-night .to-white,
+  .theme-azure-night .to-slate-300 {
+    --tw-gradient-to: #031031 var(--tw-gradient-to-position);
+  }
+
+  .theme-azure-night .hover\:bg-blue-50:hover,
+  .theme-azure-night .hover\:bg-slate-100:hover,
+  .theme-azure-night .hover\:bg-slate-800:hover {
+    background-color: var(--surface-2);
+  }
+
+  .theme-azure-night .hover\:text-slate-900:hover {
+    color: var(--text-primary);
+  }
+
+  .theme-azure-night .shadow-sm {
+    --tw-shadow: 0 12px 24px rgba(2, 7, 20, 0.4);
+    --tw-shadow-colored: 0 12px 24px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+
+  .theme-azure-night .shadow-2xl {
+    --tw-shadow: 0 35px 60px rgba(1, 7, 22, 0.6);
+    --tw-shadow-colored: 0 35px 60px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+  }
+}

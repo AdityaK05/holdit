@@ -1,0 +1,3 @@
+# Ignore Node.js dependencies everywhere in the repo
+node_modules/
+**/node_modules/
