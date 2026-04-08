@@ -8,27 +8,17 @@ interface SearchBarProps {
   loading?: boolean;
 }
 
-export default function SearchBar({
-  defaultValue = "",
-  onSearch,
-  loading = false,
-}: SearchBarProps) {
+export default function SearchBar({ defaultValue = "", onSearch, loading = false }: SearchBarProps) {
   const [query, setQuery] = useState(defaultValue);
   const [error, setError] = useState("");
+  const [focused, setFocused] = useState(false);
 
-  useEffect(() => {
-    setQuery(defaultValue);
-  }, [defaultValue]);
+  useEffect(() => { setQuery(defaultValue); }, [defaultValue]);
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = query.trim();
-
-    if (trimmed.length < 2) {
-      setError("Enter at least 2 characters");
-      return;
-    }
-
+    if (trimmed.length < 2) { setError("Enter at least 2 characters"); return; }
     setError("");
     onSearch(trimmed);
   };
@@ -37,37 +27,29 @@ export default function SearchBar({
     <div className="w-full">
       <form
         onSubmit={handleSubmit}
-        className="flex w-full flex-col gap-3 rounded-3xl border border-slate-200 bg-white p-3 shadow-lg shadow-blue-100/40 sm:flex-row"
+        className={`glass-card glow-ring flex w-full flex-col gap-3 rounded-2xl p-2 transition-all duration-500 sm:flex-row ${
+          focused ? "border-[rgba(255,255,255,0.2)] shadow-glow-md" : ""
+        }`}
       >
-        <input
-          type="text"
-          value={query}
-          onChange={(event) => {
-            setQuery(event.target.value);
-            if (error) {
-              setError("");
-            }
-          }}
-          placeholder="Search for headphones, milk, phone case..."
-          className="min-w-0 flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-base text-slate-900 placeholder:text-slate-400 focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-          aria-label="Search products"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
-        >
-          {loading ? (
-            <>
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-              Searching
-            </>
-          ) : (
-            "Search"
-          )}
+        <div className="relative min-w-0 flex-1">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className={`absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 transition-all duration-500 ${focused ? "text-white scale-110" : "text-[#525252]"}`}>
+            <circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" />
+          </svg>
+          <input
+            type="text" value={query}
+            onChange={(e) => { setQuery(e.target.value); if (error) setError(""); }}
+            onFocus={() => setFocused(true)} onBlur={() => setFocused(false)}
+            placeholder="Search for headphones, milk, phone case..."
+            className="w-full rounded-xl bg-transparent py-4 pl-12 pr-4 text-[15px] text-white placeholder:text-[#3a3a3a] focus:outline-none"
+            aria-label="Search products"
+          />
+        </div>
+        <button type="submit" disabled={loading} className="btn-gradient inline-flex items-center justify-center gap-2 rounded-xl px-7 py-4 text-sm">
+          {loading ? (<><span className="spinner-orbital-sm" /> Searching</>) : (<>Search</>)}
         </button>
       </form>
-      {error ? <p className="mt-2 text-sm font-medium text-red-600">{error}</p> : null}
+      {error ? <p className="mt-2 text-sm font-medium text-[#a3a3a3]">{error}</p> : null}
     </div>
   );
 }

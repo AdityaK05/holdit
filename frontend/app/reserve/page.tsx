@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
 import axios from "axios";
-
+import { motion } from "framer-motion";
 import CountdownTimer from "@/components/CountdownTimer";
 import OTPDisplay from "@/components/OTPDisplay";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -13,30 +13,7 @@ import api from "@/lib/api";
 import type { ApiResponse, Product, Reservation, Store } from "@/lib/types";
 
 function SummarySkeleton() {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div className="grid gap-6 md:grid-cols-[220px_1fr]">
-        <div className="h-56 animate-pulse rounded-3xl bg-slate-200" />
-        <div className="space-y-4">
-          <div className="h-6 w-32 animate-pulse rounded bg-slate-200" />
-          <div className="h-10 w-2/3 animate-pulse rounded bg-slate-200" />
-          <div className="h-4 w-full animate-pulse rounded bg-slate-200" />
-          <div className="h-4 w-3/4 animate-pulse rounded bg-slate-200" />
-          <div className="h-12 w-full animate-pulse rounded-2xl bg-slate-200" />
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ConfirmationIcon() {
-  return (
-    <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" className="h-8 w-8">
-        <path d="m5 13 4 4L19 7" />
-      </svg>
-    </div>
-  );
+  return <div className="glass-card rounded-2xl p-8"><div className="grid gap-8 md:grid-cols-[220px_1fr]"><div className="h-56 rounded-2xl skeleton-shimmer" /><div className="space-y-4"><div className="h-4 w-32 rounded skeleton-shimmer" /><div className="h-8 w-2/3 rounded skeleton-shimmer" /><div className="h-4 w-full rounded skeleton-shimmer" /><div className="h-12 w-full rounded-xl skeleton-shimmer" /></div></div></div>;
 }
 
 function ReservePageContent() {
@@ -44,260 +21,140 @@ function ReservePageContent() {
   const searchParams = useSearchParams();
   const storeId = searchParams.get("store_id") ?? "";
   const productId = searchParams.get("product_id") ?? "";
-
   const [product, setProduct] = useState<Product | null>(null);
   const [store, setStore] = useState<Store | null>(null);
   const [reservation, setReservation] = useState<Reservation | null>(null);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-  const [statusPulse, setStatusPulse] = useState(false);
 
   const loadSummary = async () => {
-    if (!storeId || !productId) {
-      setError("Missing reservation details");
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError("");
-
+    if (!storeId || !productId) { setError("Missing details"); setLoading(false); return; }
+    setLoading(true); setError("");
     try {
-      const [productResponse, storeResponse] = await Promise.all([
+      const [pRes, sRes] = await Promise.all([
         api.get<ApiResponse<{ product: Product }>>(`/products/${productId}`),
         api.get<ApiResponse<{ store: Store }>>(`/stores/${storeId}`),
       ]);
-
-      setProduct(productResponse.data.data.product);
-      setStore(storeResponse.data.data.store);
+      setProduct(pRes.data.data.product); setStore(sRes.data.data.store);
     } catch (err) {
-      if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Something went wrong");
-      } else {
-        setError("Something went wrong");
-      }
-    } finally {
-      setLoading(false);
-    }
+      if (axios.isAxiosError(err)) setError(err.response?.data?.message ?? "Something went wrong");
+      else setError("Something went wrong");
+    } finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    void loadSummary();
-  }, [productId, storeId]);
+  useEffect(() => { void loadSummary(); }, [productId, storeId]);
 
   useEffect(() => {
-    if (!reservation || reservation.status !== "pending") {
-      return;
-    }
-
+    if (!reservation || reservation.status !== "pending") return;
     const interval = window.setInterval(async () => {
       try {
-        const response = await api.get<ApiResponse<{ reservation: Reservation }>>(
-          `/reservations/${reservation.id}`,
-        );
-        const nextReservation = response.data.data.reservation;
-
-        if (nextReservation.status !== reservation.status) {
-          setStatusPulse(true);
-          window.setTimeout(() => setStatusPulse(false), 1200);
-        }
-
-        setReservation(nextReservation);
-
-        if (nextReservation.status !== "pending") {
-          window.clearInterval(interval);
-        }
-      } catch {
-        window.clearInterval(interval);
-      }
+        const res = await api.get<ApiResponse<{ reservation: Reservation }>>(`/reservations/${reservation.id}`);
+        setReservation(res.data.data.reservation);
+        if (res.data.data.reservation.status !== "pending") window.clearInterval(interval);
+      } catch { window.clearInterval(interval); }
     }, 5000);
-
-    return () => {
-      window.clearInterval(interval);
-    };
+    return () => window.clearInterval(interval);
   }, [reservation]);
 
-  const handleConfirmReservation = async () => {
-    if (!productId || !storeId) {
-      return;
-    }
-
-    setSubmitting(true);
-    setError("");
-
+  const handleConfirm = async () => {
+    if (!productId || !storeId) return;
+    setSubmitting(true); setError("");
     try {
-      const response = await api.post<ApiResponse<{ reservation: Reservation }>>("/reservations", {
-        product_id: productId,
-        store_id: storeId,
-      });
-      setReservation(response.data.data.reservation);
+      const res = await api.post<ApiResponse<{ reservation: Reservation }>>("/reservations", { product_id: productId, store_id: storeId });
+      setReservation(res.data.data.reservation);
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setError("Sorry, this item just went out of stock. Choose another store.");
-      } else if (axios.isAxiosError(err)) {
-        setError(err.response?.data?.message ?? "Something went wrong");
-      } else {
-        setError("Something went wrong");
-      }
-    } finally {
-      setSubmitting(false);
-    }
+      if (axios.isAxiosError(err) && err.response?.status === 409) setError("Item just went out of stock.");
+      else if (axios.isAxiosError(err)) setError(err.response?.data?.message ?? "Something went wrong");
+      else setError("Something went wrong");
+    } finally { setSubmitting(false); }
   };
 
-  const renderReservedState = () => {
-    if (!reservation || !product || !store) {
-      return null;
-    }
-
+  const renderReserved = () => {
+    if (!reservation || !product || !store) return null;
     if (reservation.status === "rejected") {
       return (
-        <div className="rounded-3xl border border-red-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900">This reservation could not be confirmed</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            The store marked this item unavailable before pickup. Try another nearby store.
-          </p>
-          <button
-            type="button"
-            onClick={() => router.push(`/stores?product_id=${productId}&name=${encodeURIComponent(product.name)}`)}
-            className="mt-6 rounded-2xl bg-blue-600 px-5 py-3 font-semibold text-white hover:bg-blue-700"
-          >
-            Try another store
-          </button>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-12 text-center">
+          <h2 className="text-2xl font-bold text-white">Unavailable</h2>
+          <p className="mt-3 text-sm text-[#525252]">Store couldn&apos;t confirm. Try another.</p>
+          <button type="button" onClick={() => router.push(`/stores?product_id=${productId}&name=${encodeURIComponent(product.name)}`)}
+            className="btn-gradient mt-6 rounded-xl px-5 py-3 text-sm">Try another store</button>
+        </motion.div>
       );
     }
-
     if (reservation.status === "expired") {
       return (
-        <div className="rounded-3xl border border-slate-200 bg-white p-8 text-center shadow-sm">
-          <h2 className="text-2xl font-bold text-slate-900">Reservation expired</h2>
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            Your pickup window has ended. You can reserve again if the item is still available.
-          </p>
-        </div>
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-12 text-center">
+          <h2 className="text-2xl font-bold text-white">Expired</h2>
+          <p className="mt-3 text-sm text-[#525252]">Your window closed. Reserve again if available.</p>
+        </motion.div>
       );
     }
-
     return (
-      <div
-        className={`rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition ${
-          statusPulse ? "scale-[1.01] shadow-lg shadow-emerald-100" : ""
-        }`}
-      >
-        <div className="mx-auto max-w-2xl space-y-6 text-center">
-          <ConfirmationIcon />
+      <motion.div initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6 }}
+        className="glass-card rounded-2xl p-8">
+        <div className="mx-auto max-w-2xl space-y-8 text-center">
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", bounce: 0.5, delay: 0.2 }}
+            className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[rgba(255,255,255,0.2)] bg-white text-black">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="h-8 w-8"><path d="m5 13 4 4L19 7" /></svg>
+          </motion.div>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-950">You&apos;re reserved!</h1>
-            <p className="mt-2 text-sm text-slate-600">
-              {product.name} at {store.name}
-            </p>
+            <h1 className="text-3xl font-bold tracking-[-0.03em] text-white">Reserved!</h1>
+            <p className="mt-2 text-sm text-[#525252]">{product.name} at {store.name}</p>
           </div>
-
           <OTPDisplay otp={reservation.otp} />
-
           <div className="flex flex-col items-center gap-3">
-            {reservation.status === "pending" ? (
-              <CountdownTimer expiresAt={reservation.expires_at} />
-            ) : null}
+            {reservation.status === "pending" && <CountdownTimer expiresAt={reservation.expires_at} />}
             <StatusBadge status={reservation.status} />
           </div>
-
-          <p className="text-sm leading-7 text-slate-600">
-            Show this OTP to store staff when you arrive
-          </p>
-
-          {reservation.status === "confirmed" ? (
-            <div className="rounded-2xl bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
-              Your item is confirmed and ready for pickup.
+          {reservation.status === "confirmed" && (
+            <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4 text-sm font-medium text-white">
+              Ready for pickup — show your OTP in store.
             </div>
-          ) : null}
+          )}
         </div>
-      </div>
+      </motion.div>
     );
   };
 
   return (
     <ProtectedRoute>
-      <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
+      <main className="min-h-[calc(100vh-73px)] px-6 py-16 lg:px-8">
         <div className="mx-auto max-w-5xl space-y-8">
-          {loading ? <SummarySkeleton /> : null}
-
-          {!loading && error && !reservation ? (
-            <div className="rounded-3xl border border-red-200 bg-red-50 p-6">
-              <p className="text-sm font-medium text-red-700">Something went wrong</p>
-              <p className="mt-1 text-sm text-red-600">{error}</p>
-              <button
-                type="button"
-                onClick={() => void loadSummary()}
-                className="mt-4 rounded-2xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
-              >
-                Retry
-              </button>
-            </div>
-          ) : null}
-
-          {!loading && product && store && !reservation ? (
-            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+          {loading && <SummarySkeleton />}
+          {!loading && error && !reservation && (
+            <div className="glass-card rounded-2xl p-6"><p className="text-sm text-[#a3a3a3]">{error}</p>
+              <button type="button" onClick={() => void loadSummary()} className="btn-gradient mt-4 rounded-xl px-4 py-2 text-sm">Retry</button></div>
+          )}
+          {!loading && product && store && !reservation && (
+            <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="glass-card rounded-2xl p-8">
               <div className="grid gap-8 md:grid-cols-[240px_1fr]">
-                <div className="overflow-hidden rounded-3xl bg-slate-200">
-                  {product.image_url ? (
-                    <img src={product.image_url} alt={product.name} className="h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex h-64 items-center justify-center text-sm font-medium text-slate-500">
-                      No image available
-                    </div>
-                  )}
+                <div className="overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.06)]">
+                  {product.image_url ? <img src={product.image_url} alt={product.name} className="h-full w-full object-cover grayscale" />
+                    : <div className="flex h-64 items-center justify-center bg-[#0a0a0a] text-[#1a1a1a]"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="h-12 w-12"><rect x="3" y="3" width="18" height="18" rx="2" /></svg></div>}
                 </div>
-
                 <div className="space-y-6">
                   <div className="space-y-3">
-                    <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
-                      {product.category}
-                    </span>
-                    <h1 className="text-3xl font-bold tracking-tight text-slate-950">{product.name}</h1>
-                    <p className="text-sm leading-7 text-slate-600">
-                      {product.description || "This item is ready to reserve for in-store pickup."}
-                    </p>
+                    <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-[#525252]">{product.category}</span>
+                    <h1 className="text-3xl font-bold tracking-[-0.03em] text-white">{product.name}</h1>
+                    <p className="text-sm leading-7 text-[#525252]">{product.description || "Ready to reserve."}</p>
                   </div>
-
-                  <div className="rounded-3xl bg-slate-50 p-5">
-                    <p className="text-sm font-semibold text-slate-900">{store.name}</p>
-                    <p className="mt-1 text-sm text-slate-600">{store.address}</p>
-                    <p className="mt-3 text-sm text-slate-500">Selected pickup store</p>
+                  <div className="glass-surface rounded-xl p-5">
+                    <p className="text-sm font-semibold text-white">{store.name}</p>
+                    <p className="mt-1 text-sm text-[#525252]">{store.address}</p>
                   </div>
-
-                  {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
-
-                  <div className="space-y-3">
-                    <button
-                      type="button"
-                      disabled={submitting}
-                      onClick={handleConfirmReservation}
-                      className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400"
-                    >
-                      {submitting ? (
-                        <>
-                          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
-                          Confirming reservation...
-                        </>
-                      ) : (
-                        "Confirm Reservation"
-                      )}
-                    </button>
-                    <Link
-                      href={`/stores?product_id=${productId}&name=${encodeURIComponent(product.name)}`}
-                      className="inline-flex text-sm font-semibold text-slate-600 hover:text-slate-900"
-                    >
-                      Cancel
-                    </Link>
-                  </div>
+                  {error && <p className="text-sm text-[#a3a3a3]">{error}</p>}
+                  <button type="button" disabled={submitting} onClick={handleConfirm}
+                    className="btn-gradient flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3.5 text-sm">
+                    {submitting ? <><span className="spinner-orbital-sm" /> Reserving...</> : "Confirm Reservation"}
+                  </button>
+                  <Link href={`/stores?product_id=${productId}&name=${encodeURIComponent(product.name)}`}
+                    className="inline-flex text-sm font-semibold text-[#525252] hover:text-white transition-colors">← Different store</Link>
                 </div>
               </div>
-            </div>
-          ) : null}
-
-          {!loading && reservation ? renderReservedState() : null}
+            </motion.div>
+          )}
+          {!loading && reservation && renderReserved()}
         </div>
       </main>
     </ProtectedRoute>
@@ -305,17 +162,5 @@ function ReservePageContent() {
 }
 
 export default function ReservePage() {
-  return (
-    <Suspense
-      fallback={
-        <main className="min-h-[calc(100vh-73px)] bg-slate-50 px-4 py-10 sm:px-6 lg:px-8">
-          <div className="mx-auto max-w-5xl">
-            <SummarySkeleton />
-          </div>
-        </main>
-      }
-    >
-      <ReservePageContent />
-    </Suspense>
-  );
+  return <Suspense fallback={<main className="min-h-[calc(100vh-73px)] px-6 py-16 lg:px-8"><div className="mx-auto max-w-5xl"><SummarySkeleton /></div></main>}><ReservePageContent /></Suspense>;
 }

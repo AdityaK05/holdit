@@ -23,9 +23,22 @@ export default function RootLayout({
   children: ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body className={`${inter.className} theme-azure-night`}>
-        <div className="min-h-screen">
+    <html lang="en" className="dark">
+      <body className={inter.className}>
+        {/* Cosmos animated background */}
+        <div className="cosmos-bg" aria-hidden="true" />
+        <div className="cosmos-particles" aria-hidden="true">
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+          <div className="cosmos-particle" />
+        </div>
+
+        <div className="relative min-h-screen">
           <Navbar />
           {children}
         </div>

@@ -14,6 +14,20 @@ interface MapViewProps {
 
 const defaultCenter = { lat: 20.5937, lng: 78.9629 };
 
+const darkMapStyles: google.maps.MapTypeStyle[] = [
+  { elementType: "geometry", stylers: [{ color: "#0a1628" }] },
+  { elementType: "labels.text.stroke", stylers: [{ color: "#0a1628" }] },
+  { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
+  { featureType: "road", elementType: "geometry", stylers: [{ color: "#162744" }] },
+  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e3a5f" }] },
+  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#1e3a5f" }] },
+  { featureType: "water", elementType: "geometry", stylers: [{ color: "#030712" }] },
+  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#111d35" }] },
+  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
+  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#111d35" }] },
+];
+
 export default function MapView({
   stores,
   productId,
@@ -53,6 +67,8 @@ export default function MapView({
             mapTypeControl: false,
             streetViewControl: false,
             fullscreenControl: false,
+            styles: darkMapStyles,
+            backgroundColor: "#0a1628",
           });
           infoWindowRef.current = new google.maps.InfoWindow();
         }
@@ -95,23 +111,25 @@ export default function MapView({
         icon: {
           path: google.maps.SymbolPath.CIRCLE,
           scale: store.id === selectedStoreId ? 10 : 7,
-          fillColor: store.id === selectedStoreId ? "#DC2626" : "#2563EB",
+          fillColor: store.id === selectedStoreId ? "#3b82f6" : "#60a5fa",
           fillOpacity: 1,
-          strokeColor: "#FFFFFF",
-          strokeWeight: 2,
+          strokeColor: store.id === selectedStoreId ? "#93bbfd" : "rgba(255,255,255,0.3)",
+          strokeWeight: store.id === selectedStoreId ? 3 : 2,
         },
       });
 
       marker.addListener("click", () => {
         onMarkerClick(store.id);
         const content = document.createElement("div");
-        content.style.padding = "6px 4px";
+        content.style.padding = "8px 4px";
         content.style.minWidth = "180px";
+        content.style.fontFamily = "Inter, system-ui, sans-serif";
 
         const title = document.createElement("div");
         title.textContent = store.name;
         title.style.fontWeight = "700";
         title.style.marginBottom = "4px";
+        title.style.color = "#0f172a";
 
         const distance = document.createElement("div");
         distance.textContent = `${store.distance_km.toFixed(1)} km away`;
@@ -123,10 +141,10 @@ export default function MapView({
         link.href = `/reserve?store_id=${store.id}&product_id=${productId}`;
         link.textContent = "Reserve";
         link.style.display = "inline-block";
-        link.style.background = "#2563EB";
+        link.style.background = "linear-gradient(135deg, #3b82f6, #818cf8)";
         link.style.color = "white";
         link.style.textDecoration = "none";
-        link.style.padding = "8px 12px";
+        link.style.padding = "8px 16px";
         link.style.borderRadius = "10px";
         link.style.fontSize = "13px";
         link.style.fontWeight = "600";
@@ -151,11 +169,17 @@ export default function MapView({
 
   if (loadError) {
     return (
-      <div className="flex h-full min-h-[320px] items-center justify-center rounded-3xl border border-slate-200 bg-slate-50 p-6 text-center text-sm font-medium text-slate-500">
-        {loadError}
+      <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl glass-surface p-6 text-center">
+        <div>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto h-10 w-10 text-[#64748b] mb-3">
+            <path d="M12 21s6-4.35 6-10a6 6 0 1 0-12 0c0 5.65 6 10 6 10Z" />
+            <circle cx="12" cy="11" r="2.5" />
+          </svg>
+          <p className="text-sm font-medium text-[#94a3b8]">{loadError}</p>
+        </div>
       </div>
     );
   }
 
-  return <div ref={mapRef} className="h-full min-h-[320px] w-full rounded-3xl" />;
+  return <div ref={mapRef} className="h-full min-h-[320px] w-full rounded-2xl" />;
 }
