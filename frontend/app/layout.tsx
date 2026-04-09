@@ -32,10 +32,6 @@ export default function RootLayout({
           <div className="cosmos-particle" />
           <div className="cosmos-particle" />
           <div className="cosmos-particle" />
-          <div className="cosmos-particle" />
-          <div className="cosmos-particle" />
-          <div className="cosmos-particle" />
-          <div className="cosmos-particle" />
         </div>
 
         <div className="relative min-h-screen">

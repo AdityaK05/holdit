@@ -29,6 +29,9 @@ class Settings(BaseSettings):
     aws_access_key_id: str = Field("", alias="AWS_ACCESS_KEY_ID")
     aws_secret_access_key: str = Field("", alias="AWS_SECRET_ACCESS_KEY")
     aws_s3_bucket: str = Field("", alias="AWS_S3_BUCKET")
+    google_client_id: str = Field("", alias="GOOGLE_CLIENT_ID")
+    razorpay_key_id: str = Field("", alias="RAZORPAY_KEY_ID")
+    razorpay_key_secret: str = Field("", alias="RAZORPAY_KEY_SECRET")
 
 
 @lru_cache

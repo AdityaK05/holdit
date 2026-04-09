@@ -25,7 +25,6 @@ export default function HomePage() {
   const { scrollYProgress } = useScroll({ target: heroRef, offset: ["start start", "end start"] });
   const heroY = useTransform(scrollYProgress, [0, 1], [0, 150]);
   const heroOpacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
-  const heroScale = useTransform(scrollYProgress, [0, 1], [1, 0.95]);
 
   return (
     <main>
@@ -37,31 +36,26 @@ export default function HomePage() {
         <div className="pointer-events-none absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[rgba(255,255,255,0.03)] blur-[120px]" />
 
         <motion.div
-          style={{ y: heroY, opacity: heroOpacity, scale: heroScale }}
+          style={{ y: heroY, opacity: heroOpacity }}
           className="relative mx-auto w-full max-w-5xl text-center"
         >
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+            transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
             className="space-y-8"
           >
             {/* Small label */}
-            <motion.p
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-              className="text-xs font-semibold uppercase tracking-[0.3em] text-[#525252]"
-            >
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-[#525252] animate-[fade-in-blur_0.6s_0.2s_both]">
               Reserve before you go
-            </motion.p>
+            </p>
 
-            {/* Main heading with stagger */}
+            {/* Main heading */}
             <div className="overflow-hidden">
               <motion.h1
-                initial={{ y: 100, opacity: 0 }}
+                initial={{ y: 80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.3, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ delay: 0.2, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="text-5xl font-bold tracking-[-0.04em] text-white sm:text-7xl lg:text-8xl"
               >
                 Know what&apos;s
@@ -69,9 +63,9 @@ export default function HomePage() {
             </div>
             <div className="overflow-hidden -mt-4">
               <motion.h1
-                initial={{ y: 100, opacity: 0 }}
+                initial={{ y: 80, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
-                transition={{ delay: 0.45, duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+                transition={{ delay: 0.35, duration: 0.7, ease: [0.25, 0.46, 0.45, 0.94] }}
                 className="text-5xl font-bold tracking-[-0.04em] sm:text-7xl lg:text-8xl"
               >
                 <span className="gradient-text">in stock</span>
@@ -79,32 +73,17 @@ export default function HomePage() {
             </div>
 
             {/* Subtitle */}
-            <motion.p
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7, duration: 0.8 }}
-              className="mx-auto max-w-2xl text-lg leading-8 text-[#525252]"
-            >
+            <p className="mx-auto max-w-2xl text-lg leading-8 text-[#525252] animate-[fade-in-blur_0.8s_0.5s_both]">
               Check product availability at your nearest store. Reserve it instantly, pick it up with an OTP. No wasted trips.
-            </motion.p>
+            </p>
 
             {/* Search Bar */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.9, duration: 0.6 }}
-              className="mx-auto max-w-2xl"
-            >
+            <div className="mx-auto max-w-2xl animate-[slide-up_0.6s_0.7s_both]">
               <SearchBar onSearch={(q) => router.push(`/search?q=${encodeURIComponent(q)}`)} />
-            </motion.div>
+            </div>
 
             {/* Scroll indicator */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 1.5, duration: 0.8 }}
-              className="pt-12"
-            >
+            <div className="pt-12 animate-[fade-in-blur_0.8s_1.2s_both]">
               <motion.div
                 animate={{ y: [0, 8, 0] }}
                 transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
@@ -116,7 +95,7 @@ export default function HomePage() {
                   className="mx-auto mt-2 h-2 w-1 rounded-full bg-white"
                 />
               </motion.div>
-            </motion.div>
+            </div>
           </motion.div>
         </motion.div>
       </section>
@@ -125,7 +104,7 @@ export default function HomePage() {
       <section className="overflow-hidden border-y border-[rgba(255,255,255,0.05)] py-5">
         <div className="flex animate-marquee whitespace-nowrap">
           {[...marqueeItems, ...marqueeItems].map((item, i) => (
-            <span key={i} className="mx-8 text-sm font-semibold tracking-[0.25em] text-[#1a1a1a] hover:text-[#525252] transition-colors duration-500">
+            <span key={i} className="mx-8 text-sm font-semibold tracking-[0.25em] text-[#1a1a1a] hover:text-[#525252] transition-colors duration-300">
               {item}
             </span>
           ))}
@@ -136,9 +115,9 @@ export default function HomePage() {
       <section className="px-6 py-32 lg:px-8">
         <div className="mx-auto max-w-5xl">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
             className="mb-20"
           >
@@ -152,13 +131,13 @@ export default function HomePage() {
             {steps.map((step, i) => (
               <motion.div
                 key={step.num}
-                initial={{ opacity: 0, x: i % 2 === 0 ? -60 : 60 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.7, delay: i * 0.15 }}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
                 viewport={{ once: true, margin: "-80px" }}
                 className="group flex items-start gap-8 border-t border-[rgba(255,255,255,0.05)] py-12 transition-all hover:bg-[rgba(255,255,255,0.01)]"
               >
-                <span className="text-6xl font-bold tracking-[-0.04em] text-[#1a1a1a] transition-colors duration-500 group-hover:text-[#525252]">
+                <span className="text-6xl font-bold tracking-[-0.04em] text-[#1a1a1a] transition-colors duration-300 group-hover:text-[#525252]">
                   {step.num}
                 </span>
                 <div>
@@ -175,9 +154,9 @@ export default function HomePage() {
       <section className="px-6 py-32 lg:px-8">
         <div className="mx-auto max-w-7xl">
           <motion.div
-            initial={{ opacity: 0, y: 40 }}
+            initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.7 }}
+            transition={{ duration: 0.6 }}
             viewport={{ once: true }}
             className="mb-16 flex items-end justify-between"
           >
@@ -187,8 +166,7 @@ export default function HomePage() {
                 Trending products
               </h2>
             </div>
-            <motion.button
-              whileHover={{ x: 4 }}
+            <button
               type="button"
               onClick={() => router.push("/search?q=all")}
               className="hidden items-center gap-2 text-sm font-semibold text-[#525252] hover:text-white transition-colors sm:flex"
@@ -197,7 +175,7 @@ export default function HomePage() {
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="h-4 w-4">
                 <path d="M5 12h14M12 5l7 7-7 7" />
               </svg>
-            </motion.button>
+            </button>
           </motion.div>
 
           <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
@@ -219,9 +197,9 @@ export default function HomePage() {
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: i * 0.1 }}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
               viewport={{ once: true }}
               className="text-center"
             >
@@ -235,9 +213,9 @@ export default function HomePage() {
       {/* ── CTA ── */}
       <section className="px-6 py-32 lg:px-8">
         <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.7 }}
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
           viewport={{ once: true }}
           className="mx-auto max-w-4xl text-center"
         >
@@ -247,16 +225,12 @@ export default function HomePage() {
           <p className="mx-auto mt-6 max-w-lg text-base leading-7 text-[#525252]">
             Join thousands of smart shoppers who reserve before they leave.
           </p>
-          <motion.div
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.98 }}
-            className="mt-10 inline-block"
-          >
+          <div className="mt-10 inline-block">
             <button type="button" onClick={() => router.push("/register")}
               className="btn-gradient rounded-full px-10 py-4 text-sm tracking-wide">
               Get Started Free
             </button>
-          </motion.div>
+          </div>
         </motion.div>
       </section>
 

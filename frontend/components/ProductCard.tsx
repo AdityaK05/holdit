@@ -15,20 +15,20 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
 
   return (
     <motion.article
-      initial={{ opacity: 0, rotateX: 15, y: 40 }}
-      whileInView={{ opacity: 1, rotateX: 0, y: 0 }}
-      transition={{ duration: 0.6, delay: index * 0.1, ease: [0.25, 0.46, 0.45, 0.94] }}
+      initial={{ opacity: 0, y: 30 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, delay: index * 0.08, ease: [0.25, 0.46, 0.45, 0.94] }}
       viewport={{ once: true, margin: "-50px" }}
-      whileHover={{ y: -8, transition: { duration: 0.3 } }}
-      style={{ perspective: "1000px" }}
+      whileHover={{ y: -6, transition: { duration: 0.25 } }}
       className="group glass-card overflow-hidden rounded-2xl"
     >
       <div className="relative h-52 overflow-hidden">
         {product.image_url ? (
-          <motion.img
+          <img
             src={product.image_url}
             alt={product.name}
-            className="h-full w-full object-cover grayscale transition-all duration-700 group-hover:grayscale-0 group-hover:scale-110"
+            loading="lazy"
+            className="h-full w-full object-cover grayscale transition-all duration-500 group-hover:grayscale-0 group-hover:scale-105"
           />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-[#0a0a0a]">
@@ -40,7 +40,7 @@ export default function ProductCard({ product, index = 0 }: ProductCardProps) {
         {/* Gradient overlay */}
         <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent" />
         {/* Category badge */}
-        <span className="absolute bottom-4 left-4 inline-flex rounded-full border border-[rgba(255,255,255,0.15)] bg-[rgba(0,0,0,0.7)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#a3a3a3] backdrop-blur-sm">
+        <span className="absolute bottom-4 left-4 inline-flex rounded-full border border-[rgba(255,255,255,0.15)] bg-[rgba(0,0,0,0.7)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.15em] text-[#a3a3a3]">
           {product.category}
         </span>
       </div>

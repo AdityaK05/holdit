@@ -16,3 +16,6 @@ boto3
 geoalchemy2
 httpx
 python-dotenv
+razorpay
+google-auth
+google-auth-httplib2

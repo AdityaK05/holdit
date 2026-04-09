@@ -36,11 +36,10 @@ export default function DashboardReservationCard({
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 30, rotateX: 8 }}
-      whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
-      transition={{ duration: 0.5, delay: index * 0.08 }}
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay: index * 0.06 }}
       viewport={{ once: true }}
-      style={{ perspective: "1000px" }}
       className="glass-card overflow-hidden rounded-2xl p-6"
     >
       <div className="flex flex-col gap-5 sm:flex-row">

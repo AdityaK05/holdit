@@ -29,6 +29,14 @@ export interface StoreWithDistance extends Store {
   available_qty: number;
 }
 
+export interface StoreProfile extends Store {
+  description: string;
+  hours: Record<string, { open: string; close: string; closed: boolean }>;
+  staff_count: number;
+  total_products: number;
+  total_reservations: number;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -42,6 +50,15 @@ export interface Inventory {
   id: string;
   store_id: string;
   product_id: string;
+  total_qty: number;
+  available_qty: number;
+  updated_at: string;
+}
+
+export interface InventoryItem {
+  id: string;
+  product: Product;
+  store_id: string;
   total_qty: number;
   available_qty: number;
   updated_at: string;
@@ -85,6 +102,15 @@ export interface DashboardReservation {
     id: string;
     name: string;
   };
+}
+
+export interface DashboardAnalytics {
+  todayReservations: number;
+  pendingPickups: number;
+  completedToday: number;
+  avgPickupMinutes: number;
+  weeklyTrend: number[]; // 7 days of reservation counts
+  topProducts: Array<{ name: string; count: number }>;
 }
 
 export interface TokenResponse {

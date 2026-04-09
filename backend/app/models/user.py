@@ -14,13 +14,30 @@ class UserRole(str, enum.Enum):
     ADMIN = "admin"
 
 
+class AuthProvider(str, enum.Enum):
+    EMAIL = "email"
+    PHONE = "phone"
+    GOOGLE = "google"
+
+
 class User(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     __tablename__ = "users"
 
     name: Mapped[str] = mapped_column(String(100), nullable=False)
-    phone: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
-    email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
-    password_hash: Mapped[str] = mapped_column(String, nullable=False)
+    phone: Mapped[str | None] = mapped_column(String(20), unique=True, nullable=True)
+    email: Mapped[str | None] = mapped_column(String(255), unique=True, nullable=True)
+    password_hash: Mapped[str | None] = mapped_column(String, nullable=True)
+    auth_provider: Mapped[AuthProvider] = mapped_column(
+        Enum(
+            AuthProvider,
+            name="auth_provider",
+            values_callable=lambda enum_type: [member.value for member in enum_type],
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=AuthProvider.EMAIL,
+        server_default=AuthProvider.EMAIL.value,
+    )
     role: Mapped[UserRole] = mapped_column(
         Enum(
             UserRole,
