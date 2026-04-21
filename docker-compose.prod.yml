@@ -1,0 +1,99 @@
+# Production overlay — apply with:
+#   docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Overrides:
+#  - Strips internal port bindings (postgres/redis not exposed externally)
+#  - Backend runs via Gunicorn with uvicorn workers
+#  - Frontend builds production bundle and runs `next start`
+#  - Adds resource limits and restart policies
+#  - Uses health checks for all services
+
+version: "3.9"
+
+services:
+  postgres:
+    ports: []   # Not exposed outside container network in prod
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  redis:
+    ports: []   # Not exposed outside container network in prod
+    restart: always
+    command: redis-server --requirepass ${REDIS_PASSWORD:-}
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  backend:
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+    command: >
+      gunicorn main:app
+      --bind 0.0.0.0:8000
+      --workers ${GUNICORN_WORKERS:-2}
+      --worker-class uvicorn.workers.UvicornWorker
+      --timeout 120
+      --graceful-timeout 30
+      --access-logfile -
+      --error-logfile -
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 15s
+      retries: 3
+
+  celery_worker:
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+
+  celery_beat:
+    restart: always
+    environment:
+      - ENVIRONMENT=production
+    deploy:
+      resources:
+        limits:
+          cpus: "0.25"
+          memory: 128M
+
+  frontend:
+    restart: always
+    build:
+      context: ./frontend
+      args:
+        - NODE_ENV=production
+        - NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL:-http://backend:8000}
+        - NEXT_PUBLIC_RAZORPAY_KEY_ID=${NEXT_PUBLIC_RAZORPAY_KEY_ID:-}
+    command: ["node_modules/.bin/next", "start", "-p", "3000"]
+    deploy:
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 256M
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/"]
+      interval: 30s
+      timeout: 5s
+      start_period: 20s
+      retries: 3

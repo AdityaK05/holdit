@@ -60,4 +60,8 @@ class User(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
         "Reservation",
         back_populates="user",
     )
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment",
+        back_populates="user",
+    )
     store: Mapped["Store | None"] = relationship("Store", back_populates="staff_users")

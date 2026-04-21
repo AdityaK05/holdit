@@ -379,6 +379,62 @@ input, button, textarea { @apply outline-none; }
   .animate-marquee {
     will-change: transform;
   }
+  /* Payment status badges */
+  .payment-badge-completed {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+  }
+
+  .payment-badge-pending {
+    background: rgba(163, 163, 163, 0.08);
+    color: #a3a3a3;
+    border: 1px solid rgba(163, 163, 163, 0.15);
+  }
+
+  .payment-badge-failed {
+    background: rgba(255, 255, 255, 0.04);
+    color: #737373;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .payment-badge-refunded {
+    background: rgba(115, 115, 115, 0.08);
+    color: #737373;
+    border: 1px solid rgba(115, 115, 115, 0.12);
+  }
+
+  /* Checkout summary card */
+  .checkout-amount-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  .checkout-total-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-top: 0.75rem;
+    font-weight: 700;
+    color: #ffffff;
+  }
+
+  /* Payment gateway secure badge */
+  .payment-secure-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.25rem 0.625rem;
+    border-radius: 9999px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 0.6875rem;
+    color: var(--noir-text-faint);
+    letter-spacing: 0.05em;
+  }
 }
 
 /* ─── Scrollbar ─── */

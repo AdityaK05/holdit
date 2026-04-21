@@ -1,5 +1,6 @@
 fastapi
 uvicorn
+gunicorn
 sqlalchemy[asyncio]
 asyncpg
 psycopg2-binary
@@ -10,7 +11,7 @@ celery
 python-jose[cryptography]
 passlib[bcrypt]==1.7.4
 bcrypt==4.0.1
-twilio
+fastapi-mail
 firebase-admin
 boto3
 geoalchemy2
@@ -19,3 +20,7 @@ python-dotenv
 razorpay
 google-auth
 google-auth-httplib2
+slowapi
+python-json-logger
+sentry-sdk[fastapi]
+python-multipart

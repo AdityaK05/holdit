@@ -2,14 +2,23 @@
 
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
 import axios from "axios";
 import { motion } from "framer-motion";
-import MapView from "@/components/MapView";
 import SearchBar from "@/components/SearchBar";
 import StoreCard from "@/components/StoreCard";
 import api from "@/lib/api";
 import { mockStores } from "@/lib/mock-data";
 import type { ApiResponse, StoreWithDistance } from "@/lib/types";
+
+const MapView = dynamic(() => import("@/components/MapView"), {
+  ssr: false,
+  loading: () => (
+    <div className="flex h-full min-h-[320px] w-full items-center justify-center rounded-2xl glass-surface p-6 text-center">
+      <div className="spinner-orbital" />
+    </div>
+  ),
+});
 
 type LocationState = "prompt" | "requesting" | "ready" | "manual";
 type ViewTab = "list" | "map";

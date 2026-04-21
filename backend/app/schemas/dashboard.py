@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.reservation import ReservationStatus
+from app.models.reservation import ReservationPaymentStatus, ReservationStatus
 
 
 class DashboardReservationUserOut(BaseModel):
@@ -37,6 +37,9 @@ class DashboardReservationOut(BaseModel):
     expires_at: datetime
     confirmed_at: datetime | None
     completed_at: datetime | None = None
+    total_amount_paise: int
+    paid_amount_paise: int
+    payment_status: ReservationPaymentStatus
     created_at: datetime
     user: DashboardReservationUserOut
     product: DashboardReservationProductOut

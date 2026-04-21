@@ -5,7 +5,18 @@ from app.schemas.dashboard import (
     DashboardReservationOut,
     RejectReservationRequest,
 )
-from app.schemas.inventory import InventoryOut, InventoryUpdate
+from app.schemas.inventory import (
+    InventoryItemOut,
+    InventoryOut,
+    InventoryScanRequest,
+    InventoryUpdate,
+)
+from app.schemas.payment import (
+    PaymentCreateRequest,
+    PaymentOrderResponse,
+    PaymentOut,
+    PaymentVerifyRequest,
+)
 from app.schemas.product import ProductOut
 from app.schemas.reservation import CompletePickup, ReservationCreate, ReservationOut
 from app.schemas.store import StoreOut, StoreWithDistance
@@ -16,9 +27,15 @@ __all__ = [
     "CompletePickupRequest",
     "ConfirmReservationRequest",
     "DashboardReservationOut",
+    "InventoryItemOut",
     "InventoryOut",
+    "InventoryScanRequest",
     "InventoryUpdate",
     "LoginRequest",
+    "PaymentCreateRequest",
+    "PaymentOrderResponse",
+    "PaymentOut",
+    "PaymentVerifyRequest",
     "ProductOut",
     "RefreshRequest",
     "RegisterRequest",

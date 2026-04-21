@@ -4,11 +4,12 @@ from fastapi import HTTPException, status
 from geoalchemy2 import Geography
 from sqlalchemy import String, cast, func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import selectinload
 
 from app.models.inventory import StoreInventory
 from app.models.product import Product
 from app.models.store import Store
-from app.schemas.inventory import InventoryOut
+from app.schemas.inventory import InventoryItemOut, InventoryOut, InventoryScanRequest
 from app.schemas.store import StoreWithDistance
 
 
@@ -143,3 +144,94 @@ async def update_inventory(
 
     await db.refresh(inventory)
     return InventoryOut.model_validate(inventory)
+
+
+async def list_store_inventory_items(
+    db: AsyncSession,
+    store_id: UUID,
+) -> list[InventoryItemOut]:
+    statement = (
+        select(StoreInventory)
+        .options(selectinload(StoreInventory.product))
+        .where(StoreInventory.store_id == store_id)
+        .order_by(StoreInventory.updated_at.desc())
+    )
+    items = await db.scalars(statement)
+    return [InventoryItemOut.model_validate(item) for item in items.all()]
+
+
+async def scan_and_upsert_inventory(
+    db: AsyncSession,
+    store_id: UUID,
+    payload: InventoryScanRequest,
+) -> InventoryItemOut:
+    async with db.begin():
+        store = await db.get(Store, store_id)
+        if store is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Store not found",
+            )
+
+        product = await db.scalar(
+            select(Product)
+            .where(Product.barcode == payload.barcode)
+            .with_for_update()
+        )
+
+        if product is None:
+            product = Product(
+                barcode=payload.barcode,
+                name=payload.name or f"Scanned {payload.barcode}",
+                category=payload.category or "Uncategorized",
+                description=payload.description,
+                image_url=payload.image_url,
+                price_paise=payload.price_paise or 0,
+            )
+            db.add(product)
+            await db.flush()
+        else:
+            if payload.name:
+                product.name = payload.name
+            if payload.category:
+                product.category = payload.category
+            if payload.description is not None:
+                product.description = payload.description
+            if payload.image_url is not None:
+                product.image_url = payload.image_url
+            if payload.price_paise is not None:
+                product.price_paise = payload.price_paise
+
+        inventory = await db.scalar(
+            select(StoreInventory)
+            .where(
+                StoreInventory.store_id == store_id,
+                StoreInventory.product_id == product.id,
+            )
+            .with_for_update()
+        )
+
+        if inventory is None:
+            inventory = StoreInventory(
+                store_id=store_id,
+                product_id=product.id,
+                total_qty=payload.quantity,
+                available_qty=payload.quantity,
+            )
+            db.add(inventory)
+        else:
+            inventory.total_qty += payload.quantity
+            inventory.available_qty += payload.quantity
+
+    inventory_with_product = await db.scalar(
+        select(StoreInventory)
+        .options(selectinload(StoreInventory.product))
+        .where(StoreInventory.id == inventory.id)
+    )
+    if inventory_with_product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Inventory not found",
+        )
+
+    return InventoryItemOut.model_validate(inventory_with_product)

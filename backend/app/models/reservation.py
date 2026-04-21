@@ -2,7 +2,7 @@ import enum
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String
+from sqlalchemy import DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -15,6 +15,12 @@ class ReservationStatus(str, enum.Enum):
     REJECTED = "rejected"
     COMPLETED = "completed"
     EXPIRED = "expired"
+
+
+class ReservationPaymentStatus(str, enum.Enum):
+    PENDING = "pending"
+    PARTIALLY_PAID = "partially_paid"
+    FULLY_PAID = "fully_paid"
 
 
 class Reservation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
@@ -50,7 +56,33 @@ class Reservation(UUIDPrimaryKeyMixin, CreatedAtMixin, Base):
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    total_amount_paise: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+    paid_amount_paise: Mapped[int] = mapped_column(
+        Integer,
+        nullable=False,
+        default=0,
+        server_default="0",
+    )
+    payment_status: Mapped[ReservationPaymentStatus] = mapped_column(
+        Enum(
+            ReservationPaymentStatus,
+            name="reservation_payment_status",
+            values_callable=lambda enum_type: [member.value for member in enum_type],
+            validate_strings=True,
+        ),
+        nullable=False,
+        default=ReservationPaymentStatus.PENDING,
+        server_default=ReservationPaymentStatus.PENDING.value,
+    )
 
     user: Mapped["User"] = relationship("User", back_populates="reservations")
     store: Mapped["Store"] = relationship("Store", back_populates="reservations")
     product: Mapped["Product"] = relationship("Product", back_populates="reservations")
+    payments: Mapped[list["Payment"]] = relationship(
+        "Payment", back_populates="reservation"
+    )

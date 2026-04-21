@@ -18,6 +18,11 @@ engine = create_async_engine(
     _build_async_database_url(settings.postgres_url),
     echo=False,
     future=True,
+    pool_size=settings.database_pool_size,
+    max_overflow=settings.database_max_overflow,
+    pool_timeout=settings.database_pool_timeout,
+    pool_recycle=settings.database_pool_recycle,
+    pool_pre_ping=True,
 )
 
 AsyncSessionLocal = async_sessionmaker(
@@ -37,3 +42,8 @@ async def get_db() -> AsyncGenerator[AsyncSession, None]:
 async def create_all() -> None:
     async with engine.begin() as connection:
         await connection.run_sync(Base.metadata.create_all)
+
+
+async def dispose_engine() -> None:
+    """Gracefully close all pooled connections."""
+    await engine.dispose()

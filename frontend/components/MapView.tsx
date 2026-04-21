@@ -1,8 +1,10 @@
 "use client";
 
-import { Loader } from "@googlemaps/js-api-loader";
-import { useEffect, useRef, useState } from "react";
-
+import { useEffect, useState } from "react";
+import "leaflet/dist/leaflet.css";
+import * as L from "leaflet";
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from "react-leaflet";
+import Link from "next/link";
 import type { StoreWithDistance } from "@/lib/types";
 
 interface MapViewProps {
@@ -12,21 +14,47 @@ interface MapViewProps {
   onMarkerClick: (id: string) => void;
 }
 
-const defaultCenter = { lat: 20.5937, lng: 78.9629 };
+const defaultCenter: [number, number] = [20.5937, 78.9629];
 
-const darkMapStyles: google.maps.MapTypeStyle[] = [
-  { elementType: "geometry", stylers: [{ color: "#0a1628" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0a1628" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-  { featureType: "administrative", elementType: "geometry.stroke", stylers: [{ color: "#1e293b" }] },
-  { featureType: "road", elementType: "geometry", stylers: [{ color: "#162744" }] },
-  { featureType: "road", elementType: "geometry.stroke", stylers: [{ color: "#1e3a5f" }] },
-  { featureType: "road.highway", elementType: "geometry", stylers: [{ color: "#1e3a5f" }] },
-  { featureType: "water", elementType: "geometry", stylers: [{ color: "#030712" }] },
-  { featureType: "poi", elementType: "geometry", stylers: [{ color: "#111d35" }] },
-  { featureType: "poi", elementType: "labels.text.fill", stylers: [{ color: "#64748b" }] },
-  { featureType: "transit", elementType: "geometry", stylers: [{ color: "#111d35" }] },
-];
+// Component to dynamically fit the bounds of all markers when they change
+function FitBounds({ stores }: { stores: StoreWithDistance[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (stores.length === 0) {
+      map.setView(defaultCenter, 5);
+      return;
+    }
+    
+    // Convert store lat/lng strings to numbers and create Leaflet LatLng objects
+    const latLngs = stores.map((store) => 
+      L.latLng(Number(store.lat), Number(store.lng))
+    );
+    
+    // Create a bounds object and fit the map to it
+    const bounds = L.latLngBounds(latLngs);
+    map.fitBounds(bounds, { padding: [50, 50] });
+  }, [map, stores]);
+
+  return null;
+}
+
+// Function to create a custom div icon
+const createCustomIcon = (isSelected: boolean) => {
+  return L.divIcon({
+    className: "custom-leaflet-marker",
+    html: `<div style="
+      background-color: ${isSelected ? '#3b82f6' : '#60a5fa'};
+      width: ${isSelected ? '20px' : '14px'};
+      height: ${isSelected ? '20px' : '14px'};
+      border-radius: 50%;
+      border: ${isSelected ? '3px solid #93bbfd' : '2px solid rgba(255,255,255,0.8)'};
+      box-shadow: 0 0 10px rgba(0,0,0,0.5);
+      transition: all 0.3s ease;
+    "></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10], // Center the marker on the point
+  });
+};
 
 export default function MapView({
   stores,
@@ -34,152 +62,89 @@ export default function MapView({
   selectedStoreId,
   onMarkerClick,
 }: MapViewProps) {
-  const mapRef = useRef<HTMLDivElement | null>(null);
-  const mapInstanceRef = useRef<google.maps.Map | null>(null);
-  const markersRef = useRef<google.maps.Marker[]>([]);
-  const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
-  const [loadError, setLoadError] = useState("");
+  // Fix for React Hydration and Next.js SSR with Leaflet
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-    if (!apiKey || !mapRef.current) {
-      setLoadError("Google Maps is unavailable right now.");
-      return;
-    }
-
-    let mounted = true;
-    const loader = new Loader({
-      apiKey,
-      version: "weekly",
-    });
-
-    loader
-      .load()
-      .then(() => {
-        if (!mounted || !mapRef.current) {
-          return;
-        }
-
-        if (!mapInstanceRef.current) {
-          mapInstanceRef.current = new google.maps.Map(mapRef.current, {
-            center: defaultCenter,
-            zoom: 11,
-            mapTypeControl: false,
-            streetViewControl: false,
-            fullscreenControl: false,
-            styles: darkMapStyles,
-            backgroundColor: "#0a1628",
-          });
-          infoWindowRef.current = new google.maps.InfoWindow();
-        }
-      })
-      .catch(() => {
-        if (mounted) {
-          setLoadError("Something went wrong while loading the map.");
-        }
-      });
-
-    return () => {
-      mounted = false;
-    };
+    setMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!mapInstanceRef.current || !window.google) {
-      return;
-    }
-
-    markersRef.current.forEach((marker) => marker.setMap(null));
-    markersRef.current = [];
-
-    if (!stores.length) {
-      mapInstanceRef.current.setCenter(defaultCenter);
-      mapInstanceRef.current.setZoom(11);
-      return;
-    }
-
-    const bounds = new google.maps.LatLngBounds();
-
-    stores.forEach((store) => {
-      const marker = new google.maps.Marker({
-        map: mapInstanceRef.current,
-        position: {
-          lat: Number(store.lat),
-          lng: Number(store.lng),
-        },
-        title: store.name,
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: store.id === selectedStoreId ? 10 : 7,
-          fillColor: store.id === selectedStoreId ? "#3b82f6" : "#60a5fa",
-          fillOpacity: 1,
-          strokeColor: store.id === selectedStoreId ? "#93bbfd" : "rgba(255,255,255,0.3)",
-          strokeWeight: store.id === selectedStoreId ? 3 : 2,
-        },
-      });
-
-      marker.addListener("click", () => {
-        onMarkerClick(store.id);
-        const content = document.createElement("div");
-        content.style.padding = "8px 4px";
-        content.style.minWidth = "180px";
-        content.style.fontFamily = "Inter, system-ui, sans-serif";
-
-        const title = document.createElement("div");
-        title.textContent = store.name;
-        title.style.fontWeight = "700";
-        title.style.marginBottom = "4px";
-        title.style.color = "#0f172a";
-
-        const distance = document.createElement("div");
-        distance.textContent = `${store.distance_km.toFixed(1)} km away`;
-        distance.style.fontSize = "13px";
-        distance.style.color = "#475569";
-        distance.style.marginBottom = "8px";
-
-        const link = document.createElement("a");
-        link.href = `/reserve?store_id=${store.id}&product_id=${productId}`;
-        link.textContent = "Reserve";
-        link.style.display = "inline-block";
-        link.style.background = "linear-gradient(135deg, #3b82f6, #818cf8)";
-        link.style.color = "white";
-        link.style.textDecoration = "none";
-        link.style.padding = "8px 16px";
-        link.style.borderRadius = "10px";
-        link.style.fontSize = "13px";
-        link.style.fontWeight = "600";
-
-        content.appendChild(title);
-        content.appendChild(distance);
-        content.appendChild(link);
-
-        infoWindowRef.current?.setContent(content);
-        infoWindowRef.current?.open({
-          anchor: marker,
-          map: mapInstanceRef.current,
-        });
-      });
-
-      markersRef.current.push(marker);
-      bounds.extend(marker.getPosition() as google.maps.LatLng);
-    });
-
-    mapInstanceRef.current.fitBounds(bounds);
-  }, [onMarkerClick, productId, selectedStoreId, stores]);
-
-  if (loadError) {
+  if (!mounted) {
     return (
-      <div className="flex h-full min-h-[320px] items-center justify-center rounded-2xl glass-surface p-6 text-center">
-        <div>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="mx-auto h-10 w-10 text-[#64748b] mb-3">
-            <path d="M12 21s6-4.35 6-10a6 6 0 1 0-12 0c0 5.65 6 10 6 10Z" />
-            <circle cx="12" cy="11" r="2.5" />
-          </svg>
-          <p className="text-sm font-medium text-[#94a3b8]">{loadError}</p>
-        </div>
+      <div className="flex h-full min-h-[320px] w-full items-center justify-center rounded-2xl glass-surface p-6 text-center">
+        <div className="spinner-orbital" />
       </div>
     );
   }
 
-  return <div ref={mapRef} className="h-full min-h-[320px] w-full rounded-2xl" />;
+  return (
+    <div className="h-full min-h-[320px] w-full rounded-2xl overflow-hidden border border-[rgba(255,255,255,0.06)] relative z-0">
+      <MapContainer
+        center={defaultCenter}
+        zoom={5}
+        style={{ height: "100%", width: "100%", background: "#0a1628" }}
+        zoomControl={false}
+        attributionControl={false}
+      >
+        {/* Dark-themed OpenStreetMap tiles via CartoDB Dark Matter to match the Noir aesthetic */}
+        <TileLayer
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+          maxZoom={20}
+        />
+        
+        <FitBounds stores={stores} />
+
+        {stores.map((store) => (
+          <Marker
+            key={store.id}
+            position={[Number(store.lat), Number(store.lng)]}
+            icon={createCustomIcon(store.id === selectedStoreId)}
+            eventHandlers={{
+              click: () => onMarkerClick(store.id),
+            }}
+          >
+            <Popup 
+               className="dark-popup"
+               closeButton={false} 
+               offset={[0, -5]}
+            >
+              <div className="font-sans text-left min-w-[160px] p-1">
+                <div className="font-bold text-[#0f172a] text-sm mb-1">{store.name}</div>
+                <div className="text-[13px] text-[#475569] mb-3">{store.distance_km.toFixed(1)} km away</div>
+                <Link
+                  href={`/reserve?store_id=${store.id}&product_id=${productId}`}
+                  className="block w-full text-center bg-gradient-to-br from-blue-500 to-indigo-500 text-white font-semibold text-[13px] px-4 py-2 rounded-lg decoration-none !text-white hover:opacity-90 transition-opacity"
+                >
+                  Reserve
+                </Link>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+      
+      {/* Custom styles for Leaflet elements that cannot be styles with Tailwind */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .leaflet-container {
+           font-family: inherit;
+        }
+        .leaflet-popup-content-wrapper {
+          border-radius: 12px;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2);
+          overflow: hidden;
+        }
+        .leaflet-popup-content {
+          margin: 10px;
+        }
+        .leaflet-popup-tip {
+          box-shadow: none;
+        }
+        .custom-leaflet-marker {
+          background: transparent;
+          border: none;
+        }
+      `}} />
+    </div>
+  );
 }

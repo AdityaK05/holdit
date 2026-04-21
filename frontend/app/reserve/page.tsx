@@ -112,6 +112,10 @@ function ReservePageContent() {
 
   const renderReserved = () => {
     if (!reservation || !product || !store) return null;
+    const totalAmount = ((reservation.total_amount_paise ?? product.price_paise ?? 0) / 100) || 0;
+    const paidAmount = (reservation.paid_amount_paise ?? 0) / 100;
+    const outstandingAmount = Math.max(totalAmount - paidAmount, 0);
+
     if (reservation.status === "rejected") {
       return (
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="glass-card rounded-2xl p-12 text-center">
@@ -143,11 +147,42 @@ function ReservePageContent() {
             <p className="mt-2 text-sm text-[#525252]">{product.name} at {store.name}</p>
           </div>
           <OTPDisplay otp={reservation.otp} />
+
+          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4 text-left text-sm">
+            <div className="flex justify-between text-[#a3a3a3]">
+              <span>Total price</span>
+              <span>₹{totalAmount.toFixed(2)}</span>
+            </div>
+            <div className="mt-2 flex justify-between text-[#a3a3a3]">
+              <span>Paid</span>
+              <span>₹{paidAmount.toFixed(2)}</span>
+            </div>
+            <div className="mt-2 border-t border-[rgba(255,255,255,0.08)] pt-2 flex justify-between font-semibold text-white">
+              <span>Outstanding</span>
+              <span>₹{outstandingAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
           <div className="flex flex-col items-center gap-3">
             {reservation.status === "pending" && <CountdownTimer expiresAt={reservation.expires_at} />}
             <StatusBadge status={reservation.status} />
+            {reservation.payment_status && (
+              <span className="rounded-full border border-[rgba(255,255,255,0.12)] px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-[#a3a3a3]">
+                Payment: {reservation.payment_status.replace("_", " ")}
+              </span>
+            )}
           </div>
-          {reservation.status === "confirmed" && (
+
+          {outstandingAmount > 0 && (
+            <Link
+              href={`/checkout?reservation_id=${reservation.id}&store_id=${store.id}&product_id=${product.id}`}
+              className="btn-gradient inline-flex items-center justify-center rounded-xl px-5 py-3 text-sm"
+            >
+              {paidAmount > 0 ? "Pay Remaining" : "Pay Now"}
+            </Link>
+          )}
+
+          {reservation.status === "confirmed" && outstandingAmount <= 0 && (
             <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-4 text-sm font-medium text-white">
               Ready for pickup — show your OTP in store.
             </div>

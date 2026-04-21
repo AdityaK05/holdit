@@ -88,48 +88,64 @@ PRODUCT_SEEDS = [
         "description": "Apple iPhone 15 with A16 Bionic chip, dynamic island, and advanced dual-camera system.",
         "category": "Smartphones",
         "image_url": "https://images.unsplash.com/photo-1695048133142-1f74b7d1e7d0?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000015",
+        "price_paise": 79900,
     },
     {
         "name": "Samsung Galaxy S24",
         "description": "Samsung flagship smartphone with AI-powered camera features and vivid AMOLED display.",
         "category": "Smartphones",
         "image_url": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000022",
+        "price_paise": 74900,
     },
     {
         "name": "Sony WH-1000XM5 Headphones",
         "description": "Premium wireless noise-cancelling headphones with long battery life and rich sound.",
         "category": "Audio",
         "image_url": "https://images.unsplash.com/photo-1546435770-a3e426bf472b?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000039",
+        "price_paise": 29900,
     },
     {
         "name": "iPad Air M2",
         "description": "Lightweight Apple tablet powered by the M2 chip for creative work and entertainment.",
         "category": "Tablets",
         "image_url": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000046",
+        "price_paise": 59900,
     },
     {
         "name": "MacBook Air M3",
         "description": "Thin and powerful Apple laptop with the M3 chip and all-day battery life.",
         "category": "Laptops",
         "image_url": "https://images.unsplash.com/photo-1517336714739-489689fd1ca8?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000053",
+        "price_paise": 109900,
     },
     {
         "name": "boAt Airdopes 141",
         "description": "Budget-friendly true wireless earbuds with fast charging and punchy bass output.",
         "category": "Audio",
         "image_url": "https://images.unsplash.com/photo-1606220838315-056192d5e927?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000060",
+        "price_paise": 1999,
     },
     {
         "name": "OnePlus 12",
         "description": "High-performance Android flagship with a bright display and ultra-fast charging.",
         "category": "Smartphones",
         "image_url": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000077",
+        "price_paise": 64900,
     },
     {
         "name": "Logitech MX Master 3 Mouse",
         "description": "Ergonomic productivity mouse with precision scrolling and multi-device support.",
         "category": "Accessories",
         "image_url": "https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=1200&q=80",
+        "barcode": "8901000000084",
+        "price_paise": 9499,
     },
 ]
 
@@ -224,12 +240,16 @@ def create_or_update_products(session: Session) -> dict[str, Product]:
                 description=seed["description"],
                 category=seed["category"],
                 image_url=seed["image_url"],
+                barcode=seed["barcode"],
+                price_paise=seed["price_paise"],
             )
             session.add(product)
         else:
             product.description = seed["description"]
             product.category = seed["category"]
             product.image_url = seed["image_url"]
+            product.barcode = seed["barcode"]
+            product.price_paise = seed["price_paise"]
 
         products[seed["name"]] = product
 

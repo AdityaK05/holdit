@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import type { Reservation } from "@/lib/types";
 import { motion } from "framer-motion";
 import CountdownTimer from "@/components/CountdownTimer";
@@ -16,6 +17,9 @@ interface ReservationCardProps {
 export default function ReservationCard({ reservation, onCancel, cancelling = false, index = 0 }: ReservationCardProps) {
   const createdDate = new Date(reservation.created_at).toLocaleString();
   const directionsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(reservation.store.address)}`;
+  const totalAmount = ((reservation.total_amount_paise ?? reservation.product.price_paise ?? 0) / 100) || 0;
+  const paidAmount = (reservation.paid_amount_paise ?? 0) / 100;
+  const outstandingAmount = Math.max(totalAmount - paidAmount, 0);
 
   return (
     <motion.article
@@ -47,20 +51,53 @@ export default function ReservationCard({ reservation, onCancel, cancelling = fa
             <StatusBadge status={reservation.status} />
           </div>
 
+          <div className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[rgba(255,255,255,0.03)] p-3 text-sm text-[#a3a3a3]">
+            <div className="flex justify-between">
+              <span>Total</span>
+              <span>₹{totalAmount.toFixed(2)}</span>
+            </div>
+            <div className="mt-1 flex justify-between">
+              <span>Paid</span>
+              <span>₹{paidAmount.toFixed(2)}</span>
+            </div>
+            <div className="mt-2 border-t border-[rgba(255,255,255,0.08)] pt-2 flex justify-between font-semibold text-white">
+              <span>Outstanding</span>
+              <span>₹{outstandingAmount.toFixed(2)}</span>
+            </div>
+          </div>
+
           {reservation.status === "pending" && (
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <CountdownTimer expiresAt={reservation.expires_at} />
-              <button type="button" disabled={cancelling}
-                onClick={() => { if (window.confirm("Cancel this reservation?")) onCancel(reservation.id); }}
-                className="btn-danger-ghost rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-40">
-                {cancelling ? "Cancelling..." : "Cancel"}
-              </button>
+              <div className="flex items-center gap-2">
+                {outstandingAmount > 0 && (
+                  <Link
+                    href={`/checkout?reservation_id=${reservation.id}&store_id=${reservation.store.id}&product_id=${reservation.product.id}`}
+                    className="btn-gradient rounded-xl px-4 py-2.5 text-sm"
+                  >
+                    {paidAmount > 0 ? "Pay Remaining" : "Pay Now"}
+                  </Link>
+                )}
+                <button type="button" disabled={cancelling}
+                  onClick={() => { if (window.confirm("Cancel this reservation?")) onCancel(reservation.id); }}
+                  className="btn-danger-ghost rounded-xl px-4 py-2.5 text-sm font-semibold disabled:opacity-40">
+                  {cancelling ? "Cancelling..." : "Cancel"}
+                </button>
+              </div>
             </div>
           )}
 
           {reservation.status === "confirmed" && (
             <div className="space-y-4">
               <OTPDisplay otp={reservation.otp} />
+              {outstandingAmount > 0 && (
+                <Link
+                  href={`/checkout?reservation_id=${reservation.id}&store_id=${reservation.store.id}&product_id=${reservation.product.id}`}
+                  className="btn-gradient inline-flex rounded-xl px-4 py-2.5 text-sm"
+                >
+                  Pay Remaining Balance
+                </Link>
+              )}
               <div className="glass-surface rounded-xl p-4">
                 <p className="text-sm font-medium text-white">{reservation.store.address}</p>
                 <a href={directionsUrl} target="_blank" rel="noreferrer"

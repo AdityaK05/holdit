@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.models.reservation import ReservationStatus
+from app.models.reservation import ReservationPaymentStatus, ReservationStatus
 from app.schemas.product import ProductOut
 from app.schemas.store import StoreOut
 
@@ -23,6 +23,9 @@ class ReservationOut(BaseModel):
     expires_at: datetime
     confirmed_at: datetime | None
     completed_at: datetime | None
+    total_amount_paise: int
+    paid_amount_paise: int
+    payment_status: ReservationPaymentStatus
     created_at: datetime
     store: StoreOut
     product: ProductOut

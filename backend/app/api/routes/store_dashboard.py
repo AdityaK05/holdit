@@ -16,6 +16,7 @@ from app.schemas.dashboard import (
 from app.services.dashboard_service import (
     complete_pickup,
     confirm_reservation,
+    get_store_analytics,
     get_store_reservations,
     reject_reservation,
 )
@@ -114,3 +115,19 @@ async def complete_store_pickup(
         "data": {"reservation": DashboardReservationOut.model_validate(reservation).model_dump()},
         "message": "Pickup complete",
     }
+
+
+@router.get("/analytics")
+async def store_analytics(
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(require_role("store_staff")),
+) -> dict:
+    """Real-time KPIs for the store manager dashboard."""
+    store_id = _require_staff_store(current_user)
+    analytics = await get_store_analytics(db, store_id)
+    return {
+        "success": True,
+        "data": {"analytics": analytics},
+        "message": "",
+    }
+

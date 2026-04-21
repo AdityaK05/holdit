@@ -10,7 +10,12 @@ from sqlalchemy.orm import selectinload
 
 from app.core.redis_client import acquire_lock, release_lock
 from app.models.inventory import StoreInventory
-from app.models.reservation import Reservation, ReservationStatus
+from app.models.product import Product
+from app.models.reservation import (
+    Reservation,
+    ReservationPaymentStatus,
+    ReservationStatus,
+)
 
 
 def _reservation_with_relations_query() -> select:
@@ -31,6 +36,13 @@ async def create_reservation(
     store_id: UUID,
     product_id: UUID,
 ) -> Reservation:
+    product = await db.get(Product, product_id)
+    if product is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Product not found",
+        )
+
     inventory_statement = select(StoreInventory.available_qty).where(
         StoreInventory.store_id == store_id,
         StoreInventory.product_id == product_id,
@@ -78,6 +90,9 @@ async def create_reservation(
                 status=ReservationStatus.PENDING,
                 otp=_generate_otp(),
                 expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+                total_amount_paise=product.price_paise,
+                paid_amount_paise=0,
+                payment_status=ReservationPaymentStatus.PENDING,
             )
             db.add(reservation)
             await db.flush()
@@ -224,6 +239,10 @@ async def expire_reservation_by_id(db: AsyncSession, reservation_id: UUID) -> No
         if reservation is None or reservation.status != ReservationStatus.PENDING:
             return
 
+        # Do NOT expire reservations that have received partial or full payment
+        if reservation.paid_amount_paise > 0:
+            return
+
         inventory = await db.scalar(
             select(StoreInventory)
             .where(
@@ -240,3 +259,39 @@ async def expire_reservation_by_id(db: AsyncSession, reservation_id: UUID) -> No
 
         reservation.status = ReservationStatus.EXPIRED
         inventory.available_qty += 1
+
+
+async def sweep_expired_reservations(db: AsyncSession) -> int:
+    """Catch any reservations whose expires_at has passed but were not
+    caught by the individual Celery countdown task. Safety net only.
+
+    Returns the number of reservations expired.
+    """
+    now = datetime.now(timezone.utc)
+    async with db.begin():
+        stale = await db.scalars(
+            select(Reservation)
+            .where(
+                Reservation.status == ReservationStatus.PENDING,
+                Reservation.expires_at < now,
+                Reservation.paid_amount_paise <= 0,
+            )
+            .with_for_update()
+        )
+
+        count = 0
+        for reservation in stale.all():
+            inventory = await db.scalar(
+                select(StoreInventory)
+                .where(
+                    StoreInventory.store_id == reservation.store_id,
+                    StoreInventory.product_id == reservation.product_id,
+                )
+                .with_for_update()
+            )
+            if inventory is not None:
+                reservation.status = ReservationStatus.EXPIRED
+                inventory.available_qty += 1
+                count += 1
+
+    return count

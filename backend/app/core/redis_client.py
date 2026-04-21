@@ -14,6 +14,11 @@ async def get_redis() -> AsyncGenerator[Redis, None]:
     yield redis_client
 
 
+async def close_redis() -> None:
+    """Gracefully close the Redis connection pool."""
+    await redis_client.aclose()
+
+
 async def acquire_lock(redis: Redis, lock_key: str, ttl: int = 5) -> str | None:
     for attempt in range(3):
         token = str(uuid.uuid4())

@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.core.dependencies import get_current_user
 from app.core.redis_client import get_redis
 from app.models.user import User
 from app.schemas.reservation import ReservationCreate, ReservationOut
+from app.services.email_service import send_reservation_otp_email
 from app.services.reservation_service import (
     cancel_reservation,
     create_reservation,
@@ -23,6 +24,7 @@ router = APIRouter(prefix="/reservations", tags=["reservations"])
 @router.post("", status_code=status.HTTP_201_CREATED)
 async def create_reservation_route(
     payload: ReservationCreate,
+    background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     redis: Redis = Depends(get_redis),
     current_user: User = Depends(get_current_user),
@@ -36,6 +38,16 @@ async def create_reservation_route(
     )
     notify_store.delay(str(reservation.id))
     expire_reservation.apply_async(args=[str(reservation.id)], countdown=600)
+    
+    # Send email asynchronously through FastAPI
+    background_tasks.add_task(
+        send_reservation_otp_email,
+        email=current_user.email,
+        name=current_user.name,
+        otp=reservation.otp,
+        store_name=reservation.store.name if hasattr(reservation, "store") and reservation.store else "HoldIt Partner",
+    )
+
     return {
         "success": True,
         "data": {"reservation": ReservationOut.model_validate(reservation).model_dump()},

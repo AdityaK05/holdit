@@ -10,6 +10,8 @@ class ProductOut(BaseModel):
     description: str | None
     category: str
     image_url: str | None
+    barcode: str | None
+    price_paise: int
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
