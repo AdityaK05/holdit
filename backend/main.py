@@ -142,11 +142,10 @@ async def startup_event():
 @app.on_event("shutdown")
 async def shutdown_event():
     from app.core.database import dispose_engine
-    from app.core.redis_client import close_redis
 
-    logger.info("Shutting down — closing DB and Redis connections")
+
+    logger.info("Shutting down — closing DB connections")
     await dispose_engine()
-    await close_redis()
     logger.info("Shutdown complete")
 
 # ── Routers ───────────────────────────────────────────────────────────────────

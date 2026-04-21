@@ -123,10 +123,10 @@ async def verify_payment_route(
     if reservation:
         background_tasks.add_task(
             send_payment_receipt_email,
-            email=current_user.email,
+            email=current_user.email or "",
             name=current_user.name,
             amount_rupees=payment.amount_paise / 100,
-            payment_id=payment.id,
+            payment_id=str(payment.id),
             store_name=reservation.store.name if hasattr(reservation, "store") and reservation.store else "HoldIt Partner",
         )
 

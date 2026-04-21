@@ -75,7 +75,7 @@ async def login(
 ) -> dict:
     normalized_email = payload.email.strip().lower()
     user = await db.scalar(select(User).where(func.lower(User.email) == normalized_email))
-    if user is None or not verify_password(payload.password, user.password_hash):
+    if user is None or user.password_hash is None or not verify_password(payload.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid email or password",

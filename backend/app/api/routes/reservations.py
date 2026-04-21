@@ -1,12 +1,10 @@
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
-from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.core.database import get_db
+import asyncio
+from app.core.database import get_db, AsyncSessionLocal
 from app.core.dependencies import get_current_user
-from app.core.redis_client import get_redis
 from app.models.user import User
 from app.schemas.reservation import ReservationCreate, ReservationOut
 from app.services.email_service import send_reservation_otp_email
@@ -15,8 +13,13 @@ from app.services.reservation_service import (
     create_reservation,
     get_reservation,
     get_user_reservations,
+    expire_reservation_by_id,
 )
-from app.workers.tasks import expire_reservation, notify_store
+
+async def scheduled_expire_reservation(reservation_id: UUID) -> None:
+    await asyncio.sleep(600)  # Wait 10 minutes
+    async with AsyncSessionLocal() as db:
+        await expire_reservation_by_id(db, reservation_id)
 
 router = APIRouter(prefix="/reservations", tags=["reservations"])
 
@@ -26,23 +29,21 @@ async def create_reservation_route(
     payload: ReservationCreate,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     reservation = await create_reservation(
         db=db,
-        redis=redis,
         user_id=current_user.id,
         store_id=payload.store_id,
         product_id=payload.product_id,
     )
-    notify_store.delay(str(reservation.id))
-    expire_reservation.apply_async(args=[str(reservation.id)], countdown=600)
+    
+    background_tasks.add_task(scheduled_expire_reservation, reservation.id)
     
     # Send email asynchronously through FastAPI
     background_tasks.add_task(
         send_reservation_otp_email,
-        email=current_user.email,
+        email=current_user.email or "",
         name=current_user.name,
         otp=reservation.otp,
         store_name=reservation.store.name if hasattr(reservation, "store") and reservation.store else "HoldIt Partner",
@@ -97,12 +98,10 @@ async def get_reservation_route(
 async def cancel_reservation_route(
     reservation_id: UUID,
     db: AsyncSession = Depends(get_db),
-    redis: Redis = Depends(get_redis),
     current_user: User = Depends(get_current_user),
 ) -> dict:
     reservation = await cancel_reservation(
         db=db,
-        redis=redis,
         reservation_id=reservation_id,
         user_id=current_user.id,
     )

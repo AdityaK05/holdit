@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     )
 
     postgres_url: str = Field(..., alias="POSTGRES_URL")
-    redis_url: str = Field(..., alias="REDIS_URL")
+
     jwt_secret: str = Field(..., alias="JWT_SECRET")
     jwt_expiry: int = Field(..., alias="JWT_EXPIRY")
     smtp_username: str = Field("", alias="SMTP_USERNAME")

@@ -20,7 +20,7 @@ from app.services.dashboard_service import (
     get_store_reservations,
     reject_reservation,
 )
-from app.workers.tasks import notify_customer_confirmed, notify_customer_rejected
+
 
 router = APIRouter(prefix="/dashboard", tags=["store-dashboard"])
 ALLOWED_STATUS_FILTERS = {
@@ -76,7 +76,6 @@ async def confirm_store_reservation(
 ) -> dict:
     store_id = _require_staff_store(current_user)
     reservation = await confirm_reservation(db, reservation_id, store_id)
-    notify_customer_confirmed.delay(str(reservation.id))
     return {
         "success": True,
         "data": {"reservation": DashboardReservationOut.model_validate(reservation).model_dump()},
@@ -93,7 +92,6 @@ async def reject_store_reservation(
 ) -> dict:
     store_id = _require_staff_store(current_user)
     reservation = await reject_reservation(db, reservation_id, store_id)
-    notify_customer_rejected.delay(str(reservation.id))
     return {
         "success": True,
         "data": {"reservation": DashboardReservationOut.model_validate(reservation).model_dump()},

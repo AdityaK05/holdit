@@ -62,7 +62,7 @@ async def send_reservation_otp_email(email: str, name: str, otp: str, store_name
 
     message = MessageSchema(
         subject="Your Reservation OTP Code",
-        recipients=[email],
+        recipients=[EmailStr(email)],
         body=html_body,
         subtype=MessageType.html,
     )
@@ -109,7 +109,7 @@ async def send_payment_receipt_email(email: str, name: str, amount_rupees: float
 
     message = MessageSchema(
         subject="Payment Receipt - HoldIt",
-        recipients=[email],
+        recipients=[EmailStr(email)],
         body=html_body,
         subtype=MessageType.html,
     )

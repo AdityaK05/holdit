@@ -66,7 +66,7 @@ export default function ManagerReservationsPage() {
   const [loadingAction, setLoadingAction] = useState<LoadingAction>(null);
   const [toasts, setToasts] = useState<Array<{ id: number; message: string; type: "success" | "error" }>>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollingRef = useRef<number | null>(null);
   const isMounted = useRef(true);
 
   const showToast = useCallback((message: string, type: "success" | "error" = "success") => {

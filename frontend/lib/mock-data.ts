@@ -297,6 +297,7 @@ export const mockAnalytics: DashboardAnalytics = {
   todayReservations: 23,
   pendingPickups: 3,
   completedToday: 18,
+  revenueTodayPaise: 4500000,
   avgPickupMinutes: 12,
   weeklyTrend: [14, 19, 22, 17, 25, 21, 23],
   topProducts: [

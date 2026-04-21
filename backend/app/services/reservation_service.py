@@ -3,12 +3,9 @@ from secrets import randbelow
 from uuid import UUID
 
 from fastapi import HTTPException, status
-from redis.asyncio import Redis
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
-
-from app.core.redis_client import acquire_lock, release_lock
 from app.models.inventory import StoreInventory
 from app.models.product import Product
 from app.models.reservation import (
@@ -18,7 +15,7 @@ from app.models.reservation import (
 )
 
 
-def _reservation_with_relations_query() -> select:
+def _reservation_with_relations_query():
     return select(Reservation).options(
         selectinload(Reservation.store),
         selectinload(Reservation.product),
@@ -31,7 +28,6 @@ def _generate_otp() -> str:
 
 async def create_reservation(
     db: AsyncSession,
-    redis: Redis,
     user_id: UUID,
     store_id: UUID,
     product_id: UUID,
@@ -56,49 +52,38 @@ async def create_reservation(
 
     await db.rollback()
 
-    lock_key = f"lock:store:{store_id}:product:{product_id}"
-    lock_token = await acquire_lock(redis, lock_key, ttl=5)
-    if lock_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Item currently being reserved, try again",
-        )
-
     reservation_id: UUID | None = None
-    try:
-        async with db.begin():
-            inventory = await db.scalar(
-                select(StoreInventory)
-                .where(
-                    StoreInventory.store_id == store_id,
-                    StoreInventory.product_id == product_id,
-                )
-                .with_for_update()
+    async with db.begin():
+        inventory = await db.scalar(
+            select(StoreInventory)
+            .where(
+                StoreInventory.store_id == store_id,
+                StoreInventory.product_id == product_id,
             )
-            if inventory is None or inventory.available_qty <= 0:
-                raise HTTPException(
-                    status_code=status.HTTP_409_CONFLICT,
-                    detail="Item unavailable",
-                )
-
-            inventory.available_qty -= 1
-
-            reservation = Reservation(
-                user_id=user_id,
-                store_id=store_id,
-                product_id=product_id,
-                status=ReservationStatus.PENDING,
-                otp=_generate_otp(),
-                expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
-                total_amount_paise=product.price_paise,
-                paid_amount_paise=0,
-                payment_status=ReservationPaymentStatus.PENDING,
+            .with_for_update()
+        )
+        if inventory is None or inventory.available_qty <= 0:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="Item unavailable",
             )
-            db.add(reservation)
-            await db.flush()
-            reservation_id = reservation.id
-    finally:
-        await release_lock(redis, lock_key, lock_token)
+
+        inventory.available_qty -= 1
+
+        reservation = Reservation(
+            user_id=user_id,
+            store_id=store_id,
+            product_id=product_id,
+            status=ReservationStatus.PENDING,
+            otp=_generate_otp(),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+            total_amount_paise=product.price_paise,
+            paid_amount_paise=0,
+            payment_status=ReservationPaymentStatus.PENDING,
+        )
+        db.add(reservation)
+        await db.flush()
+        reservation_id = reservation.id
 
     if reservation_id is None:
         raise HTTPException(
@@ -146,7 +131,6 @@ async def get_user_reservations(db: AsyncSession, user_id: UUID) -> list[Reserva
 
 async def cancel_reservation(
     db: AsyncSession,
-    redis: Redis,
     reservation_id: UUID,
     user_id: UUID,
 ) -> Reservation:
@@ -166,57 +150,44 @@ async def cancel_reservation(
 
     await db.rollback()
 
-    lock_key = (
-        f"lock:store:{existing_reservation.store_id}:product:{existing_reservation.product_id}"
-    )
-    lock_token = await acquire_lock(redis, lock_key, ttl=5)
-    if lock_token is None:
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Item currently being reserved, try again",
+    async with db.begin():
+        reservation = await db.scalar(
+            select(Reservation)
+            .where(Reservation.id == reservation_id)
+            .with_for_update()
         )
-
-    try:
-        async with db.begin():
-            reservation = await db.scalar(
-                select(Reservation)
-                .where(Reservation.id == reservation_id)
-                .with_for_update()
+        if reservation is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Reservation not found",
             )
-            if reservation is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Reservation not found",
-                )
-            if reservation.user_id != user_id:
-                raise HTTPException(
-                    status_code=status.HTTP_403_FORBIDDEN,
-                    detail="You do not have access to this reservation",
-                )
-            if reservation.status != ReservationStatus.PENDING:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="Only pending reservations can be cancelled",
-                )
-
-            inventory = await db.scalar(
-                select(StoreInventory)
-                .where(
-                    StoreInventory.store_id == reservation.store_id,
-                    StoreInventory.product_id == reservation.product_id,
-                )
-                .with_for_update()
+        if reservation.user_id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="You do not have access to this reservation",
             )
-            if inventory is None:
-                raise HTTPException(
-                    status_code=status.HTTP_404_NOT_FOUND,
-                    detail="Inventory not found",
-                )
+        if reservation.status != ReservationStatus.PENDING:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Only pending reservations can be cancelled",
+            )
 
-            reservation.status = ReservationStatus.EXPIRED
-            inventory.available_qty += 1
-    finally:
-        await release_lock(redis, lock_key, lock_token)
+        inventory = await db.scalar(
+            select(StoreInventory)
+            .where(
+                StoreInventory.store_id == reservation.store_id,
+                StoreInventory.product_id == reservation.product_id,
+            )
+            .with_for_update()
+        )
+        if inventory is None:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Inventory not found",
+            )
+
+        reservation.status = ReservationStatus.EXPIRED
+        inventory.available_qty += 1
 
     updated_reservation = await db.scalar(
         _reservation_with_relations_query().where(Reservation.id == reservation_id)
